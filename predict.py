@@ -80,6 +80,9 @@ def main():
                 image_files.extend(files)
     elif os.path.isfile(opts.input):
         image_files.append(opts.input)
+
+    print(image_files)
+    
     
     # Set up model (all models are 'constructed at network.modeling)
     model = network.modeling.__dict__[opts.model](num_classes=opts.num_classes, output_stride=opts.output_stride)

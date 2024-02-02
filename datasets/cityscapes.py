@@ -60,6 +60,8 @@ class Cityscapes(data.Dataset):
         CityscapesClass('license plate',        -1, 255, 'vehicle', 7, False, True, (0, 0, 142)),
     ]
 
+
+
     train_id_to_color = [c.color for c in classes if (c.train_id != -1 and c.train_id != 255)]
     train_id_to_color.append([0, 0, 0])
     train_id_to_color = np.array(train_id_to_color)
@@ -70,7 +72,7 @@ class Cityscapes(data.Dataset):
     #train_id_to_color = np.array(train_id_to_color)
     #id_to_train_id = np.array([c.category_id for c in classes], dtype='uint8') - 1
 
-    def __init__(self, root, split='train', mode='fine', target_type='semantic', transform=None):
+    def __init__(self, root, active_list, split='train', mode='fine', target_type='semantic', transform=None):
         self.root = os.path.expanduser(root)
         self.mode = 'gtFine'
         self.target_type = target_type
@@ -82,7 +84,7 @@ class Cityscapes(data.Dataset):
         self.split = split
         self.images = []
         self.targets = []
-
+        self.active_list = active_list
         if split not in ['train', 'test', 'val']:
             raise ValueError('Invalid split for mode! Please use split="train", split="test"'
                              ' or split="val"')
@@ -90,26 +92,40 @@ class Cityscapes(data.Dataset):
         if not os.path.isdir(self.images_dir) or not os.path.isdir(self.targets_dir):
             raise RuntimeError('Dataset not found or incomplete. Please make sure all required folders for the'
                                ' specified "split" and "mode" are inside the "root" directory')
+
+        if self.active_list:
+            img_ids = [i_id.strip() for i_id in open(self.active_list)]
+            for file_name in img_ids:
+                self.images.append(os.path.join(self.root,'leftImg8bit',split,file_name))
+                folder = file_name.split('/')[0]
+                target_name = '{}/{}_{}_{}.{}'.format(folder,file_name.split('/')[-1].split('_leftImg8bit')[0],'gtFine','labelIds','png')
+                self.targets.append(os.path.join(self.root,'gtFine',split,target_name))
+
+        if self.active_list == None:
+            # import pdb;pdb.set_trace()
+            for city in os.listdir(self.images_dir):
+                if city == '.DS_Store':
+                    continue
+                img_dir = os.path.join(self.images_dir, city)
+                target_dir = os.path.join(self.targets_dir, city)
+
+                for file_name in os.listdir(img_dir):
+                    self.images.append(os.path.join(img_dir, file_name))
+                    target_name = '{}_{}'.format(file_name.split('_leftImg8bit')[0],self._get_target_suffix(self.mode, self.target_type))
+                    self.targets.append(os.path.join(target_dir, target_name))
+
         
-        for city in os.listdir(self.images_dir):
-            img_dir = os.path.join(self.images_dir, city)
-            target_dir = os.path.join(self.targets_dir, city)
-
-            for file_name in os.listdir(img_dir):
-                self.images.append(os.path.join(img_dir, file_name))
-                target_name = '{}_{}'.format(file_name.split('_leftImg8bit')[0],
-                                             self._get_target_suffix(self.mode, self.target_type))
-                self.targets.append(os.path.join(target_dir, target_name))
-
+        
     @classmethod
     def encode_target(cls, target):
         return cls.id_to_train_id[np.array(target)]
 
     @classmethod
     def decode_target(cls, target):
-        target[target == 255] = 19
-        #target = target.astype('uint8') + 1
+        target[target == 255] = 19  # Replace 255 with 19 or any valid index within bounds
+        # Check that all elements in the target array are within bounds
         return cls.train_id_to_color[target]
+    
 
     def __getitem__(self, index):
         """
@@ -121,9 +137,11 @@ class Cityscapes(data.Dataset):
         """
         image = Image.open(self.images[index]).convert('RGB')
         target = Image.open(self.targets[index])
+        
         if self.transform:
             image, target = self.transform(image, target)
         target = self.encode_target(target)
+        
         return image, target
 
     def __len__(self):
