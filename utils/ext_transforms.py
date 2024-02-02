@@ -14,7 +14,6 @@ from torchvision.transforms import InterpolationMode
 #
 class ExtRandomHorizontalFlip(object):
     """Horizontally flip the given PIL Image randomly with a given probability.
-
     Args:
         p (float): probability of the image being flipped. Default value is 0.5
     """
@@ -26,7 +25,6 @@ class ExtRandomHorizontalFlip(object):
         """
         Args:
             img (PIL Image): Image to be flipped.
-
         Returns:
             PIL Image: Randomly flipped image.
         """
@@ -435,7 +433,6 @@ class ExtResize(object):
     
 class ExtColorJitter(object):
     """Randomly change the brightness, contrast and saturation of an image.
-
     Args:
         brightness (float or tuple of float (min, max)): How much to jitter brightness.
             brightness_factor is chosen uniformly from [max(0, 1 - brightness), 1 + brightness]
@@ -479,9 +476,7 @@ class ExtColorJitter(object):
     @staticmethod
     def get_params(brightness, contrast, saturation, hue):
         """Get a randomized transform to be applied on image.
-
         Arguments are same as that of __init__.
-
         Returns:
             Transform which randomly adjusts brightness, contrast and
             saturation in a random order.
@@ -513,7 +508,6 @@ class ExtColorJitter(object):
         """
         Args:
             img (PIL Image): Input image.
-
         Returns:
             PIL Image: Color jittered image.
         """
@@ -531,7 +525,6 @@ class ExtColorJitter(object):
 
 class Lambda(object):
     """Apply a user-defined lambda as a transform.
-
     Args:
         lambd (function): Lambda/function to be used for transform.
     """
@@ -549,10 +542,8 @@ class Lambda(object):
 
 class Compose(object):
     """Composes several transforms together.
-
     Args:
         transforms (list of ``Transform`` objects): list of transforms to compose.
-
     Example:
         >>> transforms.Compose([
         >>>     transforms.CenterCrop(10),
